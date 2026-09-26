@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import type { DisasterEvent } from '../../types/disaster';
 import { DISASTER_TYPES_CONFIG, SEVERITY_CONFIG } from '../../utils/formatters';
-import { RotateCcw, Map as MapIcon, Moon, Satellite, Navigation, Loader2 } from 'lucide-react';
+import { RotateCcw, Map as MapIcon, Moon, Satellite, Navigation, Loader2, Plus, Minus } from 'lucide-react';
 import { THAILAND_RIVERS, MAJOR_DAMS } from '../../data/thailandRivers';
 import { rainViewerAdapter, type RadarFrame } from '../../services/api/adapters/rainViewerAdapter';
 import { MapOverlayControl, type MapOverlaySettings } from './MapOverlayControl';
@@ -135,9 +135,6 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
     }).addTo(map);
 
     tileLayerRef.current = baseTile;
-
-    // Zoom control in bottom right
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     // Rivers Layer Group
     const riversGroup = L.layerGroup().addTo(map);
@@ -870,13 +867,14 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
         </div>
       </div>
 
-      {/* Floating Circular GPS Button (Bottom Right, above Zoom Controls) */}
-      <div className="absolute bottom-20 right-3 z-20 pointer-events-auto">
+      {/* Bottom Right Floating Control Column: GPS + Zoom Controls in unified layout (Zero overlap) */}
+      <div className="absolute bottom-4 right-3 z-20 pointer-events-auto flex flex-col items-center gap-2">
+        {/* GPS Locate Me Button */}
         <button
           onClick={handleLocateGPS}
           disabled={isLocatingGPS}
           aria-label="ตำแหน่ง GPS ของฉัน"
-          className={`w-10 h-10 rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-lg flex items-center justify-center transition-all active:scale-90 ${
+          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/95 hover:bg-slate-50 border border-slate-200 shadow-md flex items-center justify-center transition-all active:scale-90 ${
             internalUserLocation || userLocation
               ? 'ring-2 ring-sky-400 text-sky-600 shadow-sky-200'
               : 'text-slate-700 hover:text-sky-600'
@@ -884,11 +882,31 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
           title="ไปที่ตำแหน่ง GPS ปัจจุบันของฉัน"
         >
           {isLocatingGPS ? (
-            <Loader2 className="w-5 h-5 text-sky-600 animate-spin" />
+            <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 text-sky-600 animate-spin" />
           ) : (
-            <Navigation className="w-5 h-5" />
+            <Navigation className="w-4 h-4 sm:w-5 sm:h-5" />
           )}
         </button>
+
+        {/* Custom Clean Light Zoom Controls */}
+        <div className="bg-white/95 backdrop-blur-md rounded-xl border border-slate-200 shadow-md flex flex-col overflow-hidden">
+          <button
+            onClick={() => mapInstanceRef.current?.zoomIn()}
+            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-700 hover:text-sky-600 hover:bg-slate-50 border-b border-slate-200 transition-colors active:bg-slate-100"
+            title="ซูมเข้า"
+            aria-label="ซูมเข้า"
+          >
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+          <button
+            onClick={() => mapInstanceRef.current?.zoomOut()}
+            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center text-slate-700 hover:text-sky-600 hover:bg-slate-50 transition-colors active:bg-slate-100"
+            title="ซูมออก"
+            aria-label="ซูมออก"
+          >
+            <Minus className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+        </div>
       </div>
 
       {/* 3. Radar Intensity Legend & Severity Legend (Bottom Left) - Light Theme */}
