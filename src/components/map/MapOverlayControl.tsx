@@ -12,6 +12,8 @@ import {
   RotateCcw,
   Sliders,
   Check,
+  Info,
+  Palette,
 } from 'lucide-react';
 import type { RadarFrame } from '../../services/api/adapters/rainViewerAdapter';
 
@@ -21,6 +23,7 @@ export interface MapOverlaySettings {
   showRainRadar: boolean;
   showClouds: boolean;
   radarOpacity: number; // 0.2 to 1.0
+  radarColorScheme: number; // 1, 2, 4, 6
 }
 
 interface MapOverlayControlProps {
@@ -49,7 +52,7 @@ export const MapOverlayControl: React.FC<MapOverlayControlProps> = ({
   const [activePreset, setActivePreset] = useState<'flood' | 'storm' | 'all' | 'clean' | 'custom'>('custom');
 
   // Helper toggle
-  const toggleKey = (key: keyof Omit<MapOverlaySettings, 'radarOpacity'>) => {
+  const toggleKey = (key: keyof Omit<MapOverlaySettings, 'radarOpacity' | 'radarColorScheme'>) => {
     setActivePreset('custom');
     onChangeSettings({
       ...settings,
@@ -137,7 +140,7 @@ export const MapOverlayControl: React.FC<MapOverlayControlProps> = ({
 
       {/* Floating Dropdown Card (Light Theme) */}
       {isExpanded && (
-        <div className="absolute top-full left-0 mt-1.5 w-72 sm:w-80 bg-white/98 backdrop-blur-md rounded-2xl border border-slate-200 shadow-2xl p-3 space-y-3 z-50 text-slate-800 animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute top-full left-0 mt-1.5 w-72 sm:w-84 max-h-[85vh] overflow-y-auto bg-white/98 backdrop-blur-md rounded-2xl border border-slate-200 shadow-2xl p-3 space-y-3 z-50 text-slate-800 animate-in fade-in slide-in-from-top-1 duration-150">
           {/* Quick Presets */}
           <div>
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
@@ -283,9 +286,125 @@ export const MapOverlayControl: React.FC<MapOverlayControlProps> = ({
 
             {/* Radar Animation & Opacity Controls (if radar or clouds enabled) */}
             {(settings.showRainRadar || settings.showClouds) && (
-              <div className="pt-2 border-t border-slate-100 space-y-2">
+              <div className="pt-2 border-t border-slate-100 space-y-2.5">
+                {/* Notice banner for Radar Spikes / Clutter */}
+                {settings.showRainRadar && (
+                  <div className="bg-amber-50/90 border border-amber-200/90 rounded-xl p-2.5 text-[11px] text-amber-900 leading-relaxed flex items-start gap-2 shadow-xs">
+                    <Info className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold text-amber-800 block">เกี่ยวกับเส้นขวางบนเรดาร์:</span>
+                      <p className="text-amber-900/90 mt-0.5">
+                        เส้นแนวนอนสีแดงเข้มที่พาดผ่านบางเวลา เกิดจากสัญญาณรบกวนของสถานีเรดาร์ภาคพื้น (Radar Interference Spike) ไม่ใช่พายุจริง สามารถเลือกโทนสีด้านล่างเพื่อลดการรบกวนสายตาได้
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Radar Color Palette Switcher */}
+                {settings.showRainRadar && (
+                  <div className="space-y-1.5">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                      <Palette className="w-3 h-3 text-slate-400" />
+                      <span>โทนสีเรดาร์ (Radar Palette)</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 text-xs">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onChangeSettings({
+                            ...settings,
+                            radarColorScheme: 4,
+                          })
+                        }
+                        className={`p-2 rounded-xl border text-left transition-all ${
+                          (settings.radarColorScheme ?? 4) === 4
+                            ? 'bg-amber-50/80 border-amber-400 text-amber-900 font-bold shadow-xs'
+                            : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] leading-tight font-semibold">Weather Channel</span>
+                          {(settings.radarColorScheme ?? 4) === 4 && <Check className="w-3.5 h-3.5 text-amber-600" />}
+                        </div>
+                        <span className="text-[9px] text-slate-500 font-normal block mt-0.5">
+                          นุ่มนวล ลดสัญญาณรบกวน (แนะนำ)
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onChangeSettings({
+                            ...settings,
+                            radarColorScheme: 2,
+                          })
+                        }
+                        className={`p-2 rounded-xl border text-left transition-all ${
+                          settings.radarColorScheme === 2
+                            ? 'bg-blue-50/80 border-blue-400 text-blue-900 font-bold shadow-xs'
+                            : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] leading-tight font-semibold">Universal Blue</span>
+                          {settings.radarColorScheme === 2 && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                        </div>
+                        <span className="text-[9px] text-slate-500 font-normal block mt-0.5">
+                          ฟ้า-น้ำเงิน มาตรฐาน
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onChangeSettings({
+                            ...settings,
+                            radarColorScheme: 1,
+                          })
+                        }
+                        className={`p-2 rounded-xl border text-left transition-all ${
+                          settings.radarColorScheme === 1
+                            ? 'bg-emerald-50/80 border-emerald-400 text-emerald-900 font-bold shadow-xs'
+                            : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] leading-tight font-semibold">TMD Classic</span>
+                          {settings.radarColorScheme === 1 && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                        </div>
+                        <span className="text-[9px] text-slate-500 font-normal block mt-0.5">
+                          เขียว-ส้ม-แดง คลาสสิก
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onChangeSettings({
+                            ...settings,
+                            radarColorScheme: 6,
+                          })
+                        }
+                        className={`p-2 rounded-xl border text-left transition-all ${
+                          settings.radarColorScheme === 6
+                            ? 'bg-purple-50/80 border-purple-400 text-purple-900 font-bold shadow-xs'
+                            : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] leading-tight font-semibold">NEXRAD L-III</span>
+                          {settings.radarColorScheme === 6 && <Check className="w-3.5 h-3.5 text-purple-600" />}
+                        </div>
+                        <span className="text-[9px] text-slate-500 font-normal block mt-0.5">
+                          แยกระดับความแรง dBZ
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Opacity Slider */}
-                <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500">
+                <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500 pt-1">
                   <span className="flex items-center gap-1">
                     <Sliders className="w-3 h-3 text-sky-600" />
                     <span>ความเข้มเรดาร์:</span>

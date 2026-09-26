@@ -7,8 +7,28 @@
 export interface RadarFrame {
   time: number;
   path: string;
+  host: string;
   url: string;
   formattedTime: string;
+}
+
+/**
+ * Returns customized RainViewer radar tile URL with chosen color scheme and smoothing
+ * Color Schemes:
+ * 1 = Original / TMD Classic
+ * 2 = Universal Blue
+ * 4 = The Weather Channel (smooth gold/blue gradient, mitigates noise spikes)
+ * 6 = NEXRAD Level-III
+ */
+export function getRadarTileUrl(
+  frame: Pick<RadarFrame, 'host' | 'path'>,
+  colorScheme: number = 4,
+  smooth: boolean = true,
+  snow: boolean = false
+): string {
+  const smoothVal = smooth ? '1' : '0';
+  const snowVal = snow ? '1' : '0';
+  return `${frame.host}${frame.path}/256/{z}/{x}/{y}/${colorScheme}/${smoothVal}_${snowVal}.png`;
 }
 
 export interface RainViewerMetadata {
@@ -49,7 +69,8 @@ class RainViewerAdapter {
         return {
           time: f.time,
           path: f.path,
-          url: `${host}${f.path}/256/{z}/{x}/{y}/2/1_0.png`,
+          host,
+          url: `${host}${f.path}/256/{z}/{x}/{y}/4/1_0.png`,
           formattedTime: `${hours}:${mins} น.`,
         };
       });

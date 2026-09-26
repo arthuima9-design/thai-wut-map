@@ -4,7 +4,7 @@ import type { DisasterEvent } from '../../types/disaster';
 import { DISASTER_TYPES_CONFIG, SEVERITY_CONFIG } from '../../utils/formatters';
 import { RotateCcw, Map as MapIcon, Moon, Satellite, Navigation, Loader2, Plus, Minus } from 'lucide-react';
 import { THAILAND_RIVERS, MAJOR_DAMS } from '../../data/thailandRivers';
-import { rainViewerAdapter, type RadarFrame } from '../../services/api/adapters/rainViewerAdapter';
+import { rainViewerAdapter, getRadarTileUrl, type RadarFrame } from '../../services/api/adapters/rainViewerAdapter';
 import { MapOverlayControl, type MapOverlaySettings } from './MapOverlayControl';
 import { geolocationService } from '../../services/geolocationService';
 import { geocodingService } from '../../services/geocodingService';
@@ -76,7 +76,8 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
     showDams: true,
     showRainRadar: true,
     showClouds: false,
-    radarOpacity: 0.75,
+    radarOpacity: 0.55,
+    radarColorScheme: 4,
   });
 
   // RainViewer Radar & Satellite Cloud frames
@@ -265,9 +266,16 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
 
     try {
       const activeFrame = radarFrames[currentFrameIndex] || radarFrames[radarFrames.length - 1];
-      if (!activeFrame || !activeFrame.url) return;
+      if (!activeFrame || !activeFrame.path) return;
 
-      const radarTile = L.tileLayer(activeFrame.url, {
+      const tileUrl = getRadarTileUrl(
+        activeFrame,
+        overlaySettings.radarColorScheme ?? 4,
+        true,
+        false
+      );
+
+      const radarTile = L.tileLayer(tileUrl, {
         opacity: overlaySettings.radarOpacity,
         maxZoom: 19,
         maxNativeZoom: 7, // RainViewer Doppler radar free tier is strictly capped at 7
@@ -286,7 +294,7 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
     } catch (err) {
       console.warn('Error setting up rain radar layer:', err);
     }
-  }, [overlaySettings.showRainRadar, overlaySettings.radarOpacity, currentFrameIndex, radarFrames]);
+  }, [overlaySettings.showRainRadar, overlaySettings.radarOpacity, overlaySettings.radarColorScheme, currentFrameIndex, radarFrames]);
 
   // Render Rivers & Waterways
   useEffect(() => {
@@ -913,23 +921,28 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
       <div className="absolute bottom-4 left-4 z-20 hidden md:flex flex-col gap-2">
         {/* Radar Rain Color Legend */}
         {overlaySettings.showRainRadar && (
-          <div className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-200 text-[10px] shadow-md flex items-center gap-2 text-slate-700">
-            <span className="font-bold text-slate-700">เรดาร์ฝน:</span>
-            <div className="flex items-center gap-1">
-              <span className="w-3 h-2 rounded-sm bg-emerald-500" title="ฝนเบา" />
-              <span className="text-slate-500">เบา</span>
+          <div className="bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-200 text-[10px] shadow-md flex flex-col gap-1 text-slate-700 max-w-xs">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-slate-700">เรดาร์ฝน:</span>
+              <div className="flex items-center gap-1">
+                <span className="w-2.5 h-2.5 rounded-sm bg-sky-400" />
+                <span className="text-slate-500">เบา</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
+                <span className="text-slate-500">ปานกลาง</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-2.5 h-2.5 rounded-sm bg-amber-400" />
+                <span className="text-slate-500">หนัก</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-2.5 h-2.5 rounded-sm bg-rose-600" />
+                <span className="text-slate-500">หนักมาก</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1">
-              <span className="w-3 h-2 rounded-sm bg-yellow-400" title="ฝนปานกลาง" />
-              <span className="text-slate-500">ปานกลาง</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-3 h-2 rounded-sm bg-orange-500" title="ฝนหนัก" />
-              <span className="text-slate-500">หนัก</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="w-3 h-2 rounded-sm bg-purple-600" title="ฝนหนักมาก" />
-              <span className="text-slate-500">หนักมาก</span>
+            <div className="text-[9px] text-slate-400 leading-tight">
+              *เส้นแถบแนวนอนเกิดจากคลื่นรบกวนของสถานีเรดาร์ (Spike) ไม่ใช่กลุ่มฝน
             </div>
           </div>
         )}
