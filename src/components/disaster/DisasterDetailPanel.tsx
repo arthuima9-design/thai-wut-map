@@ -105,7 +105,7 @@ export const DisasterDetailPanel: React.FC<DisasterDetailPanelProps> = ({
                   <span>ระดับน้ำท่วมขัง</span>
                 </div>
                 <div className="text-xl font-bold text-sky-900">
-                  {event.depthCm} <span className="text-xs font-normal text-sky-700">ซม.</span>
+                  {Number(event.depthCm.toFixed(2))} <span className="text-xs font-normal text-sky-700">ซม.</span>
                 </div>
               </div>
             )}
@@ -117,7 +117,7 @@ export const DisasterDetailPanel: React.FC<DisasterDetailPanelProps> = ({
                   <span>ฝนสะสม 24 ชม.</span>
                 </div>
                 <div className="text-xl font-bold text-blue-900">
-                  {event.rainfallMm24h} <span className="text-xs font-normal text-blue-700">มม.</span>
+                  {Number(event.rainfallMm24h.toFixed(2))} <span className="text-xs font-normal text-blue-700">มม.</span>
                 </div>
               </div>
             )}
@@ -129,11 +129,11 @@ export const DisasterDetailPanel: React.FC<DisasterDetailPanelProps> = ({
                   <span>ขนาดความรุนแรง</span>
                 </div>
                 <div className="text-xl font-bold text-amber-900">
-                  {event.magnitude} <span className="text-xs font-normal text-amber-700">แมกนิจูด</span>
+                  {Number(event.magnitude.toFixed(2))} <span className="text-xs font-normal text-amber-700">แมกนิจูด</span>
                 </div>
                 {event.depthKm !== undefined && (
                   <div className="text-[11px] text-amber-800 mt-0.5">
-                    ลึก {event.depthKm} กม.
+                    ลึก {Number(event.depthKm.toFixed(2))} กม.
                   </div>
                 )}
               </div>
@@ -158,7 +158,7 @@ export const DisasterDetailPanel: React.FC<DisasterDetailPanelProps> = ({
                   <span>ความเร็วลมสูงสุด</span>
                 </div>
                 <div className="text-xl font-bold text-teal-900">
-                  {event.windSpeedKmh} <span className="text-xs font-normal text-teal-700">กม./ชม.</span>
+                  {Number(event.windSpeedKmh.toFixed(2))} <span className="text-xs font-normal text-teal-700">กม./ชม.</span>
                 </div>
               </div>
             )}

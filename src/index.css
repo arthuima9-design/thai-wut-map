@@ -107,6 +107,14 @@
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Leaflet divIcon transparent reset */
+.search-pin-wrapper,
+.custom-disaster-marker,
+.user-gps-container {
+  background: transparent !important;
+  border: none !important;
+}
+
 /* Live GPS user pulse marker */
 .user-gps-container {
   position: relative;

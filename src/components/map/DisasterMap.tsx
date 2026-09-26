@@ -678,19 +678,17 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
     const pinIcon = L.divIcon({
       className: 'search-pin-wrapper',
       html: `
-        <div class="relative flex flex-col items-center cursor-pointer group" style="transform: translate(-50%, -100%);">
-          <div class="w-8 h-8 rounded-full bg-rose-600 text-white shadow-xl flex items-center justify-center border-2 border-white ring-4 ring-rose-500/20 transition-transform group-hover:scale-110">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            </svg>
-          </div>
-          <div class="w-2 h-1 bg-black/30 rounded-full blur-[1px] mt-0.5"></div>
+        <div style="width: 32px; height: 42px; display: flex; align-items: center; justify-content: center; cursor: pointer; user-select: none;">
+          <svg width="32" height="42" viewBox="0 0 32 42" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.35));">
+            <path d="M16 42C16 42 30 26.5 30 15C30 7.268 23.732 1 16 1C8.268 1 2 7.268 2 15C2 26.5 16 42 16 42Z" fill="#E11D48" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
+            <circle cx="16" cy="15" r="5.5" fill="#FFFFFF"/>
+            <circle cx="16" cy="15" r="2.5" fill="#E11D48"/>
+          </svg>
         </div>
       `,
-      iconSize: [32, 32],
-      iconAnchor: [16, 32],
-      popupAnchor: [0, -34],
+      iconSize: [32, 42],
+      iconAnchor: [16, 42],
+      popupAnchor: [0, -44],
     });
 
     const marker = L.marker([latitude, longitude], {
@@ -715,7 +713,6 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
 
     marker.bindPopup(popupHtml, {
       className: 'leaflet-tooltip-dark',
-      offset: [0, -28],
     });
 
     searchPinLayer.addLayer(marker);

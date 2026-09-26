@@ -88,8 +88,8 @@ export class OpenMeteoAdapter {
             reportedAt: current.time ? `${current.time}:00+07:00` : new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             confidence: 'high',
-            rainfallMm24h: rainMm * 24, // estimated rate
-            windSpeedKmh: windKmh,
+            rainfallMm24h: Math.round(rainMm * 24 * 100) / 100, // estimated 24h rate rounded to 2 decimal places
+            windSpeedKmh: Math.round(windKmh * 10) / 10,
             isDemo: false, // LIVE REAL DATA!
             guidelines: [
               'ตรวจสอบสภาพอากาศก่อนออกเดินทาง',
