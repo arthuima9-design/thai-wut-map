@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none">
+  <defs>
+    <linearGradient id="shieldGrad" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="50%" stop-color="#1E40AF"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="waveGrad" x1="12" y1="24" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+    <linearGradient id="alertGrad" x1="20" y1="10" x2="28" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#EF4444"/>
+    </linearGradient>
+  </defs>
+  <!-- Shield Backing -->
+  <path d="M24 4L8 10V22C8 32.5 14.8 42.1 24 45C33.2 42.1 40 32.5 40 22V10L24 4Z" fill="url(#shieldGrad)" stroke="#38BDF8" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Map Grid / Radar lines -->
+  <circle cx="24" cy="24" r="12" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" stroke-dasharray="2 2"/>
+  <circle cx="24" cy="24" r="6" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+  <path d="M24 12V36M12 24H36" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+  <!-- Warning beacon icon in center -->
+  <path d="M24 14L32 28H16L24 14Z" fill="url(#alertGrad)"/>
+  <circle cx="24" cy="25" r="1.5" fill="#FFFFFF"/>
+  <path d="M24 19V22" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- Disaster wave ripples at base -->
+  <path d="M14 34C18 31 22 36 26 33C30 30 34 33 34 33" stroke="url(#waveGrad)" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
