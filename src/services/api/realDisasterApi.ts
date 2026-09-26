@@ -74,6 +74,7 @@ export class RealDisasterApi implements IDisasterApi {
       sourceUrl: '',
       reportedAt: cr.reportedAt,
       updatedAt: cr.reportedAt,
+      expiresAt: cr.expiresAt,
       confidence: cr.upvotes > 2 ? 'high' : 'medium',
       isDemo: false,
       isCommunityReport: true,
@@ -85,7 +86,8 @@ export class RealDisasterApi implements IDisasterApi {
         'โปรดตรวจสอบความปลอดภัยและระดับน้ำก่อนสัญจรผ่านเส้นทางนี้',
         'หากอยู่ในพื้นที่ใกล้เคียง สามารถกดปุ่ม "ยืนยันว่าท่วมจริง" เพื่อช่วยอัปเดตข้อมูล',
       ],
-    }));
+    } as DisasterEvent));
+
 
     if (this.apiMode === 'demo') {
       combinedEvents = [...communityList, ...MOCK_DISASTER_EVENTS];

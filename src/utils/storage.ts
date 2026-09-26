@@ -20,6 +20,7 @@ export interface CommunityReport {
   severity: SeverityLevel;
   depthCm?: number;
   reportedAt: string; // ISO 8601
+  expiresAt: string;  // ISO 8601 — 24 hours after reportedAt
   reporterName?: string;
   sourceType: 'self' | 'social_media' | 'rescue_team';
   upvotes: number;
@@ -71,10 +72,41 @@ export function setDemoMode(isDemo: boolean): void {
 export function getCommunityReports(): CommunityReport[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.COMMUNITY_REPORTS);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const all: CommunityReport[] = JSON.parse(raw);
+      const now = Date.now();
+      // Prune expired (or legacy reports without expiresAt older than 24h)
+      const active = all.filter((r) => {
+        if (r.expiresAt) return now < new Date(r.expiresAt).getTime();
+        // Legacy reports without expiresAt: expire 24h after reportedAt
+        return now < new Date(r.reportedAt).getTime() + 24 * 60 * 60 * 1000;
+      });
+      if (active.length !== all.length) {
+        localStorage.setItem(STORAGE_KEYS.COMMUNITY_REPORTS, JSON.stringify(active));
+      }
+      return active;
+    }
   } catch {}
   return [];
 }
+
+export function updateCommunityReportLocation(
+  reportId: string,
+  latitude: number,
+  longitude: number
+): void {
+  try {
+    const reports = getCommunityReports();
+    const target = reports.find((r) => r.id === reportId);
+    if (!target) return;
+    target.latitude = latitude;
+    target.longitude = longitude;
+    localStorage.setItem(STORAGE_KEYS.COMMUNITY_REPORTS, JSON.stringify(reports));
+  } catch (err) {
+    console.warn('Failed to update community report location:', err);
+  }
+}
+
 
 export function saveCommunityReport(report: CommunityReport): void {
   try {

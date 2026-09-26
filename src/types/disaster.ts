@@ -46,6 +46,7 @@ export interface DisasterEvent {
   sourceCode: 'GISTDA' | 'TMD' | 'DDPM' | 'NDWC' | 'USGS' | 'NASA_FIRMS' | 'RID' | 'SYSTEM' | 'HII' | 'COMMUNITY';
   reportedAt: string; // ISO 8601
   updatedAt: string;  // ISO 8601
+  expiresAt?: string; // ISO 8601 — community reports expire after 24h
   confidence: ConfidenceLevel;
   isDemo?: boolean;
   isCommunityReport?: boolean;

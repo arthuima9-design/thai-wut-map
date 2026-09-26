@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useDisasters } from './hooks/useDisasters';
 import type { DisasterType, DisasterEvent } from './types/disaster';
 import type { LocationSearchResult } from './services/provinceService';
@@ -30,6 +30,8 @@ import { DisasterTypeView } from './components/disaster/DisasterTypeView';
 import { DataSourcesModal } from './components/sources/DataSourcesModal';
 import { ReportFloodModal } from './components/disaster/ReportFloodModal';
 import { disasterService } from './services/disasterService';
+import { updateCommunityReportLocation, getCommunityReports } from './utils/storage';
+
 
 export function App() {
   const {
@@ -207,6 +209,26 @@ export function App() {
     refetch();
   };
 
+  // Save dragged community pin position back to localStorage
+  const handleCommunityPinMoved = useCallback(
+    (eventId: string, lat: number, lng: number) => {
+      updateCommunityReportLocation(eventId, lat, lng);
+      // No full refetch needed — position is already reflected via Leaflet drag
+    },
+    []
+  );
+
+  // Auto-prune expired community reports every 5 minutes
+  // getCommunityReports() already prunes expired entries on read
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Trigger prune; refetch so map updates if any were removed
+      getCommunityReports();
+      refetch();
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [refetch]);
+
   const alertEventsCount = events.filter((e) => e.type === 'alert' || e.severity === 'danger').length;
 
   return (
@@ -308,6 +330,7 @@ export function App() {
                     searchPinLocation={searchPinLocation}
                     onUserLocationFound={handleUserLocationFound}
                     onOpenReportFlood={() => setIsReportFloodOpen(true)}
+                    onCommunityPinMoved={handleCommunityPinMoved}
                   />
                 </div>
               </div>
@@ -337,6 +360,7 @@ export function App() {
                       searchPinLocation={searchPinLocation}
                       onUserLocationFound={handleUserLocationFound}
                       onOpenReportFlood={() => setIsReportFloodOpen(true)}
+                    onCommunityPinMoved={handleCommunityPinMoved}
                     />
                   </div>
                   <MapLayerFilter
@@ -371,6 +395,7 @@ export function App() {
                       searchPinLocation={searchPinLocation}
                       onUserLocationFound={handleUserLocationFound}
                       onOpenReportFlood={() => setIsReportFloodOpen(true)}
+                    onCommunityPinMoved={handleCommunityPinMoved}
                     />
                   </div>
                   <MapLayerFilter

@@ -37,6 +37,7 @@ export const DisasterDetailPanel: React.FC<DisasterDetailPanelProps> = ({
 }) => {
   const [upvotes, setUpvotes] = useState<number>(event?.upvotes || 1);
   const [hasVoted, setHasVoted] = useState<boolean>(false);
+  const [, setTickCounter] = useState<number>(0); // triggers re-render for countdown
 
   useEffect(() => {
     if (event) {
@@ -44,6 +45,15 @@ export const DisasterDetailPanel: React.FC<DisasterDetailPanelProps> = ({
       setHasVoted(hasUserUpvoted(event.id));
     }
   }, [event]);
+
+  // Live countdown ticker for community reports
+  useEffect(() => {
+    if (!event?.isCommunityReport || !event?.expiresAt) return;
+    const interval = setInterval(() => {
+      setTickCounter((n) => n + 1);
+    }, 60_000); // refresh every minute
+    return () => clearInterval(interval);
+  }, [event?.isCommunityReport, event?.expiresAt]);
 
   if (!event) return null;
 
@@ -150,11 +160,38 @@ export const DisasterDetailPanel: React.FC<DisasterDetailPanelProps> = ({
                 </span>
               </button>
             </div>
+
+            {/* Countdown Timer */}
+            {event.expiresAt && (() => {
+              const msLeft = Math.max(0, new Date(event.expiresAt).getTime() - Date.now());
+              const hLeft = Math.floor(msLeft / (60 * 60 * 1000));
+              const mLeft = Math.floor((msLeft % (60 * 60 * 1000)) / 60000);
+              const isExpiringSoon = msLeft < 2 * 60 * 60 * 1000;
+              return (
+                <div className={`flex items-center gap-2 px-2.5 py-2 rounded-xl border text-[11px] font-semibold ${
+                  isExpiringSoon
+                    ? 'bg-rose-50 border-rose-200 text-rose-800'
+                    : 'bg-amber-50 border-amber-200 text-amber-800'
+                }`}>
+                  <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>
+                    {msLeft === 0
+                      ? '⚠️ หมุดนี้หมดอายุแล้ว'
+                      : `หมุดนี้จะหมดอายุใน ${hLeft > 0 ? `${hLeft} ชม. ` : ''}${mLeft} นาที`}
+                  </span>
+                  {isExpiringSoon && msLeft > 0 && (
+                    <span className="ml-auto text-rose-600 text-[10px]">⚠️ ใกล้หมดอายุ</span>
+                  )}
+                </div>
+              );
+            })()}
+
             <p className="text-[11px] text-orange-900/90 leading-relaxed bg-white/70 p-2 rounded-xl border border-orange-200/60">
-              💡 ข้อมูลนี้มาจากผู้ใช้หรือโพสต์เตือนภัยในพื้นที่จริง คุณสามารถร่วมกด "ยืนยันว่าท่วม" เพื่อเพิ่มความน่าเชื่อถือให้กับหมุดนี้ได้
+              💡 ข้อมูลนี้มาจากผู้ใช้หรือโพสต์เตือนภัยในพื้นที่จริง คุณสามารถร่วมกด "ยืนยันว่าท่วม" เพื่อเพิ่มความน่าเชื่อถือให้กับหมุดนี้ได้ • <span className="font-semibold">ลากหมุดบนแผนที่เพื่อแก้ไขตำแหน่งที่แน่นอน</span>
             </p>
           </div>
         )}
+
 
         {/* ThaiWater Official Telemetry Banner */}
         {event.sourceCode === 'HII' && (

@@ -35,6 +35,7 @@ interface DisasterMapProps {
   searchPinLocation?: SearchPinLocation | null;
   onUserLocationFound?: (location: UserGPSLocation) => void;
   onOpenReportFlood?: () => void;
+  onCommunityPinMoved?: (eventId: string, lat: number, lng: number) => void;
   className?: string;
 }
 
@@ -52,6 +53,7 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
   searchPinLocation = null,
   onUserLocationFound,
   onOpenReportFlood,
+  onCommunityPinMoved,
   className = '',
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -505,6 +507,16 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
           </div>
         `;
 
+        // Calculate opacity for community reports (fade when <2h remaining)
+        let markerOpacity = 1;
+        if (event.isCommunityReport && event.expiresAt) {
+          const msLeft = new Date(event.expiresAt).getTime() - Date.now();
+          if (msLeft < 2 * 60 * 60 * 1000) {
+            // fade from 1.0 at 2h → 0.35 at 0h
+            markerOpacity = 0.35 + (msLeft / (2 * 60 * 60 * 1000)) * 0.65;
+          }
+        }
+
         const customIcon = L.divIcon({
           className: 'custom-disaster-marker',
           html: markerHtml,
@@ -516,13 +528,39 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
         const marker = L.marker([event.latitude, event.longitude], {
           icon: customIcon,
           title: `${event.title} (${event.province})`,
+          draggable: event.isCommunityReport === true,
+          opacity: markerOpacity,
         });
+
+        // Draggable community pin — save new position on dragend
+        if (event.isCommunityReport) {
+          marker.on('dragend', () => {
+            const latlng = marker.getLatLng();
+            if (onCommunityPinMoved) {
+              onCommunityPinMoved(event.id, latlng.lat, latlng.lng);
+            }
+          });
+          // Show drag hint in tooltip for community markers
+          (marker as any)._isDraggable = true;
+        }
 
         const sourceBadgeHtml = event.isCommunityReport
           ? `<div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 text-[9px] font-bold mb-1 border border-orange-200"><span>📢 รายงานโดยประชาชน</span><span>(👍 ${event.upvotes || 1})</span></div>`
           : event.sourceCode === 'HII'
           ? `<div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-sky-100 text-sky-900 text-[9px] font-bold mb-1 border border-sky-200"><span>📡 โทรมาตรสด ThaiWater</span></div>`
           : '';
+
+        // Build countdown text for community reports
+        let countdownHtml = '';
+        if (event.isCommunityReport && event.expiresAt) {
+          const msLeft = Math.max(0, new Date(event.expiresAt).getTime() - Date.now());
+          const hLeft = Math.floor(msLeft / (60 * 60 * 1000));
+          const mLeft = Math.floor((msLeft % (60 * 60 * 1000)) / 60000);
+          countdownHtml = `<div class="text-[10px] text-orange-700 mt-1 flex items-center gap-1">
+            <span>⏱</span><span>หมดอายุใน ${hLeft > 0 ? `${hLeft} ชม. ` : ''}${mLeft} นาที</span>
+            <span class="ml-1 text-slate-400">• ลากหมุดเพื่อแก้ตำแหน่ง</span>
+          </div>`;
+        }
 
         // Tooltip on hover
         marker.bindTooltip(
@@ -537,6 +575,7 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
                <span>${sevConfig.emoji}</span>
                <span>${sevConfig.labelTh}</span>
              </div>
+             ${countdownHtml}
            </div>`,
           {
             direction: 'auto',
@@ -554,7 +593,8 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
         console.warn('Error creating marker for event:', event, err);
       }
     });
-  }, [events, selectedEventId, onSelectEvent]);
+  }, [events, selectedEventId, onSelectEvent, onCommunityPinMoved]);
+
 
   // Handle Pan / Zoom to focused location
   useEffect(() => {

@@ -98,6 +98,9 @@ export const ReportFloodModal: React.FC<ReportFloodModalProps> = ({
 
     const depthCm = severity === 'danger' ? 65 : severity === 'warning' ? 35 : 15;
 
+    const reportedAt = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
     const newReport: CommunityReport = {
       id: `comm-report-${Date.now()}`,
       title,
@@ -109,7 +112,8 @@ export const ReportFloodModal: React.FC<ReportFloodModalProps> = ({
       longitude: finalLng,
       severity,
       depthCm,
-      reportedAt: new Date().toISOString(),
+      reportedAt,
+      expiresAt,
       reporterName: reporterName.trim() || 'พลเมืองดี',
       sourceType,
       upvotes: 1,
