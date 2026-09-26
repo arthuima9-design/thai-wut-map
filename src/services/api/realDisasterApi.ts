@@ -8,13 +8,15 @@ import type {
 import type { IDisasterApi, DisasterFilterOptions } from './disasterApi';
 import { usgsAdapter } from './adapters/usgsAdapter';
 import { openMeteoAdapter } from './adapters/openMeteoAdapter';
+import { thaiWaterAdapter } from './adapters/thaiWaterAdapter';
+import { getCommunityReports } from '../../utils/storage';
 import { MOCK_DISASTER_EVENTS } from '../../data/mockDisasters';
 import { THAILAND_PROVINCES } from '../../data/thailandProvinces';
 
 export type ApiMode = 'demo' | 'hybrid' | 'live';
 
 export class RealDisasterApi implements IDisasterApi {
-  private apiMode: ApiMode = 'hybrid'; // Default to hybrid so live earthquakes and rain merge with mock floods
+  private apiMode: ApiMode = 'hybrid'; // Default to hybrid so live data merges smoothly
   private liveEventsCache: DisasterEvent[] = [];
   private lastFetchTime: number = 0;
   private readonly CACHE_TTL_MS = 60 * 1000; // 1 minute cache
@@ -34,13 +36,14 @@ export class RealDisasterApi implements IDisasterApi {
     }
 
     try {
-      // Parallel fetch from live real APIs (USGS and Open-Meteo)
-      const [earthquakes, weatherAlerts] = await Promise.all([
-        usgsAdapter.fetchLiveEarthquakes(),
-        openMeteoAdapter.fetchLiveWeatherAlerts(),
+      // Parallel fetch from live real APIs (USGS Earthquake, Open-Meteo Weather, ThaiWater Telemetry)
+      const [earthquakes, weatherAlerts, realWaterLevels] = await Promise.all([
+        usgsAdapter.fetchLiveEarthquakes().catch(() => []),
+        openMeteoAdapter.fetchLiveWeatherAlerts().catch(() => []),
+        thaiWaterAdapter.fetchLiveWaterLevels().catch(() => []),
       ]);
 
-      const liveList = [...earthquakes, ...weatherAlerts];
+      const liveList = [...earthquakes, ...weatherAlerts, ...realWaterLevels];
       this.liveEventsCache = liveList;
       this.lastFetchTime = now;
       return liveList;
@@ -53,23 +56,56 @@ export class RealDisasterApi implements IDisasterApi {
   async fetchDisasterEvents(filter?: DisasterFilterOptions): Promise<DisasterEvent[]> {
     let combinedEvents: DisasterEvent[] = [];
 
+    // Load crowdsourced community reports from local storage
+    const communityList: DisasterEvent[] = getCommunityReports().map((cr) => ({
+      id: cr.id,
+      type: 'flood',
+      title: cr.title,
+      description: cr.description,
+      province: cr.province,
+      district: cr.district,
+      subdistrict: cr.subdistrict,
+      latitude: cr.latitude,
+      longitude: cr.longitude,
+      severity: cr.severity,
+      status: 'active',
+      source: cr.reporterName ? `คุณ ${cr.reporterName} (ประชาชนในพื้นที่)` : 'รายงานสดจากประชาชน / โซเชียล',
+      sourceCode: 'COMMUNITY',
+      sourceUrl: '',
+      reportedAt: cr.reportedAt,
+      updatedAt: cr.reportedAt,
+      confidence: cr.upvotes > 2 ? 'high' : 'medium',
+      isDemo: false,
+      isCommunityReport: true,
+      upvotes: cr.upvotes,
+      depthCm: cr.depthCm,
+      reportSourceType: cr.sourceType,
+      guidelines: [
+        'รายงานสถานการณ์สดจากประชาชน / อาสาสมัครในพื้นที่จริง',
+        'โปรดตรวจสอบความปลอดภัยและระดับน้ำก่อนสัญจรผ่านเส้นทางนี้',
+        'หากอยู่ในพื้นที่ใกล้เคียง สามารถกดปุ่ม "ยืนยันว่าท่วมจริง" เพื่อช่วยอัปเดตข้อมูล',
+      ],
+    }));
+
     if (this.apiMode === 'demo') {
-      combinedEvents = [...MOCK_DISASTER_EVENTS];
+      combinedEvents = [...communityList, ...MOCK_DISASTER_EVENTS];
     } else if (this.apiMode === 'live') {
-      // Pure Live: only real API data (USGS + Open-Meteo)
+      // Pure Live: only real API data (USGS + Open-Meteo + ThaiWater) + Community Reports
       const liveData = await this.fetchAllLiveSources();
-      combinedEvents = liveData;
+      combinedEvents = [...communityList, ...liveData];
     } else {
-      // Hybrid: Live Real APIs (USGS + Open-Meteo) merged with mock floods/landslides from other agencies
+      // Hybrid: Live Real APIs (USGS + Open-Meteo + ThaiWater) + Community Reports + Selected background mock
       const liveData = await this.fetchAllLiveSources();
       
-      // Filter out mock earthquakes/storms if live ones are present, else keep mock
+      // Filter out mock earthquakes if live ones are present
       const mockFiltered = MOCK_DISASTER_EVENTS.filter((m) => {
         if (m.type === 'earthquake' && liveData.some((l) => l.type === 'earthquake')) return false;
+        // If we have live ThaiWater flood events for that province, prefer live telemetry
+        if (m.type === 'flood' && liveData.some((l) => l.type === 'flood' && l.province === m.province)) return false;
         return true;
       });
 
-      combinedEvents = [...liveData, ...mockFiltered];
+      combinedEvents = [...communityList, ...liveData, ...mockFiltered];
     }
 
     // Apply Filters

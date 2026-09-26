@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { DisasterEvent } from '../../types/disaster';
 import { DISASTER_TYPES_CONFIG, STATUS_LABELS } from '../../utils/formatters';
 import { SeverityBadge } from '../common/SeverityBadge';
 import { FreshnessBadge } from '../common/FreshnessBadge';
 import { formatThaiDateTime } from '../../utils/freshness';
+import { upvoteCommunityReport, hasUserUpvoted } from '../../utils/storage';
 import {
   X,
   ExternalLink,
@@ -19,6 +20,8 @@ import {
   Flame,
   Activity,
   Wind,
+  Megaphone,
+  ThumbsUp,
 } from 'lucide-react';
 
 interface DisasterDetailPanelProps {
@@ -32,7 +35,26 @@ export const DisasterDetailPanel: React.FC<DisasterDetailPanelProps> = ({
   onClose,
   onOpenHotlines,
 }) => {
+  const [upvotes, setUpvotes] = useState<number>(event?.upvotes || 1);
+  const [hasVoted, setHasVoted] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (event) {
+      setUpvotes(event.upvotes || 1);
+      setHasVoted(hasUserUpvoted(event.id));
+    }
+  }, [event]);
+
   if (!event) return null;
+
+  const handleVote = () => {
+    if (hasVoted) return;
+    const res = upvoteCommunityReport(event.id);
+    if (res.success) {
+      setUpvotes(res.newCount);
+      setHasVoted(true);
+    }
+  };
 
   const typeConfig = DISASTER_TYPES_CONFIG[event.type] || DISASTER_TYPES_CONFIG.alert;
   const statusConfig = STATUS_LABELS[event.status] || STATUS_LABELS.active;
@@ -90,6 +112,66 @@ export const DisasterDetailPanel: React.FC<DisasterDetailPanelProps> = ({
             <FreshnessBadge updatedAt={event.updatedAt} showDetails />
           </div>
         </div>
+
+        {/* Community Report Verification & Upvote Box */}
+        {event.isCommunityReport && (
+          <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-rose-50 border border-orange-200/90 rounded-2xl p-3.5 space-y-2 shadow-xs">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center flex-shrink-0">
+                  <Megaphone className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-orange-950 text-xs">
+                    📢 รายงานสดจากประชาชน / โซเชียล
+                  </div>
+                  <div className="text-[10px] text-orange-800">
+                    {event.source}
+                  </div>
+                </div>
+              </div>
+
+              {/* Upvote / Helpful Button */}
+              <button
+                type="button"
+                onClick={handleVote}
+                disabled={hasVoted}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs active:scale-95 ${
+                  hasVoted
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                    : 'bg-white hover:bg-orange-100 border-orange-300 text-orange-900'
+                }`}
+                title="กดเพื่อร่วมยืนยันว่าจุดนี้น้ำท่วมจริง"
+              >
+                <ThumbsUp className={`w-3.5 h-3.5 ${hasVoted ? 'text-emerald-600 fill-emerald-600' : 'text-orange-600'}`} />
+                <span>{hasVoted ? 'ยืนยันแล้ว' : 'ยืนยันว่าท่วม'}</span>
+                <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] bg-black/5 font-mono">
+                  {upvotes}
+                </span>
+              </button>
+            </div>
+            <p className="text-[11px] text-orange-900/90 leading-relaxed bg-white/70 p-2 rounded-xl border border-orange-200/60">
+              💡 ข้อมูลนี้มาจากผู้ใช้หรือโพสต์เตือนภัยในพื้นที่จริง คุณสามารถร่วมกด "ยืนยันว่าท่วม" เพื่อเพิ่มความน่าเชื่อถือให้กับหมุดนี้ได้
+            </p>
+          </div>
+        )}
+
+        {/* ThaiWater Official Telemetry Banner */}
+        {event.sourceCode === 'HII' && (
+          <div className="bg-gradient-to-r from-sky-50 to-indigo-50 border border-sky-200 rounded-2xl p-3 flex items-start gap-2.5 shadow-xs">
+            <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Waves className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-bold text-sky-950 text-xs">
+                📡 สถานีโทรมาตรตรวจวัดระดับน้ำอัตโนมัติ (Live Telemetry)
+              </div>
+              <p className="text-[11px] text-sky-800/90 mt-0.5 leading-relaxed">
+                ข้อมูลระดับน้ำและอัตราการไหลจริง เชื่อมต่อตรงจากคลังข้อมูลน้ำแห่งชาติ (สสน. / ThaiWater / กรมชลประทาน)
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Disaster specific metric highlights */}
         {(event.depthCm !== undefined ||

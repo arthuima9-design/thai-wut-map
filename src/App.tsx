@@ -28,6 +28,7 @@ import { MapLayerFilter } from './components/map/MapLayerFilter';
 import { DisasterDetailPanel } from './components/disaster/DisasterDetailPanel';
 import { DisasterTypeView } from './components/disaster/DisasterTypeView';
 import { DataSourcesModal } from './components/sources/DataSourcesModal';
+import { ReportFloodModal } from './components/disaster/ReportFloodModal';
 import { disasterService } from './services/disasterService';
 
 export function App() {
@@ -61,6 +62,7 @@ export function App() {
   const [activeTypeView, setActiveTypeView] = useState<DisasterType | null>(null);
   const [isHotlinesOpen, setIsHotlinesOpen] = useState<boolean>(false);
   const [isSourcesOpen, setIsSourcesOpen] = useState<boolean>(false);
+  const [isReportFloodOpen, setIsReportFloodOpen] = useState<boolean>(false);
   const [isSimulatingError, setIsSimulatingError] = useState<boolean>(false);
   const [apiMode, setApiMode] = useState<ApiMode>('hybrid');
 
@@ -225,6 +227,7 @@ export function App() {
         onRefresh={refetch}
         onOpenHotlines={() => setIsHotlinesOpen(true)}
         onOpenSources={() => setIsSourcesOpen(true)}
+        onOpenReportFlood={() => setIsReportFloodOpen(true)}
         activeDisasterCount={events.length}
       />
 
@@ -304,6 +307,7 @@ export function App() {
                     userLocation={userLocation}
                     searchPinLocation={searchPinLocation}
                     onUserLocationFound={handleUserLocationFound}
+                    onOpenReportFlood={() => setIsReportFloodOpen(true)}
                   />
                 </div>
               </div>
@@ -332,6 +336,7 @@ export function App() {
                       userLocation={userLocation}
                       searchPinLocation={searchPinLocation}
                       onUserLocationFound={handleUserLocationFound}
+                      onOpenReportFlood={() => setIsReportFloodOpen(true)}
                     />
                   </div>
                   <MapLayerFilter
@@ -365,6 +370,7 @@ export function App() {
                       userLocation={userLocation}
                       searchPinLocation={searchPinLocation}
                       onUserLocationFound={handleUserLocationFound}
+                      onOpenReportFlood={() => setIsReportFloodOpen(true)}
                     />
                   </div>
                   <MapLayerFilter
@@ -443,6 +449,21 @@ export function App() {
       <DataSourcesModal
         isOpen={isSourcesOpen}
         onClose={() => setIsSourcesOpen(false)}
+      />
+
+      {/* 8.1 CROWDSOURCED REPORT FLOOD MODAL */}
+      <ReportFloodModal
+        isOpen={isReportFloodOpen}
+        onClose={() => setIsReportFloodOpen(false)}
+        defaultProvince={selectedProvinceName}
+        onReportSubmitted={(report) => {
+          refetch();
+          setFocusedLocation({
+            center: [report.latitude, report.longitude],
+            zoom: 14,
+          });
+          setSelectedProvinceName(report.province);
+        }}
       />
 
       {/* 9. MOBILE BOTTOM NAVIGATION (Requirement #22) */}

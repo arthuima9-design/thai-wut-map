@@ -1,3 +1,5 @@
+import type { SeverityLevel } from '../types/disaster';
+
 export interface MyAreaSetting {
   province: string;
   district: string;
@@ -5,10 +7,30 @@ export interface MyAreaSetting {
   longitude: number;
 }
 
+export interface CommunityReport {
+  id: string;
+  title: string;
+  description: string;
+  province: string;
+  district: string;
+  subdistrict?: string;
+  landmark?: string;
+  latitude: number;
+  longitude: number;
+  severity: SeverityLevel;
+  depthCm?: number;
+  reportedAt: string; // ISO 8601
+  reporterName?: string;
+  sourceType: 'self' | 'social_media' | 'rescue_team';
+  upvotes: number;
+}
+
 const STORAGE_KEYS = {
   MY_AREA: 'tdm_my_area',
   DEMO_MODE: 'tdm_demo_mode',
   SOUND_ENABLED: 'tdm_sound_enabled',
+  COMMUNITY_REPORTS: 'tdm_community_reports',
+  UPVOTED_REPORTS: 'tdm_upvoted_reports',
 };
 
 const DEFAULT_MY_AREA: MyAreaSetting = {
@@ -45,3 +67,59 @@ export function setDemoMode(isDemo: boolean): void {
     localStorage.setItem(STORAGE_KEYS.DEMO_MODE, isDemo ? 'true' : 'false');
   } catch {}
 }
+
+export function getCommunityReports(): CommunityReport[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.COMMUNITY_REPORTS);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [];
+}
+
+export function saveCommunityReport(report: CommunityReport): void {
+  try {
+    const existing = getCommunityReports();
+    // Prepend new report
+    const updated = [report, ...existing.filter((r) => r.id !== report.id)];
+    localStorage.setItem(STORAGE_KEYS.COMMUNITY_REPORTS, JSON.stringify(updated));
+  } catch (err) {
+    console.warn('Failed to save community report:', err);
+  }
+}
+
+export function hasUserUpvoted(reportId: string): boolean {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.UPVOTED_REPORTS);
+    if (raw) {
+      const upvotedIds: string[] = JSON.parse(raw);
+      return upvotedIds.includes(reportId);
+    }
+  } catch {}
+  return false;
+}
+
+export function upvoteCommunityReport(reportId: string): { success: boolean; newCount: number } {
+  try {
+    const rawUpvoted = localStorage.getItem(STORAGE_KEYS.UPVOTED_REPORTS);
+    const upvotedIds: string[] = rawUpvoted ? JSON.parse(rawUpvoted) : [];
+    
+    if (upvotedIds.includes(reportId)) {
+      return { success: false, newCount: 0 };
+    }
+
+    const reports = getCommunityReports();
+    const target = reports.find((r) => r.id === reportId);
+    if (!target) return { success: false, newCount: 0 };
+
+    target.upvotes = (target.upvotes || 0) + 1;
+    localStorage.setItem(STORAGE_KEYS.COMMUNITY_REPORTS, JSON.stringify(reports));
+
+    upvotedIds.push(reportId);
+    localStorage.setItem(STORAGE_KEYS.UPVOTED_REPORTS, JSON.stringify(upvotedIds));
+
+    return { success: true, newCount: target.upvotes };
+  } catch {
+    return { success: false, newCount: 0 };
+  }
+}
+

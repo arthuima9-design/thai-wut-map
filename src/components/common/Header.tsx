@@ -1,5 +1,5 @@
 import React from 'react';
-import { Phone, Database, RefreshCw, Flame } from 'lucide-react';
+import { Phone, Database, RefreshCw, Flame, Megaphone } from 'lucide-react';
 
 interface HeaderProps {
   lastUpdatedTime: string;
@@ -7,6 +7,7 @@ interface HeaderProps {
   onRefresh: () => void;
   onOpenHotlines: () => void;
   onOpenSources: () => void;
+  onOpenReportFlood?: () => void;
   activeDisasterCount: number;
 }
 
@@ -16,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   onRefresh,
   onOpenHotlines,
   onOpenSources,
+  onOpenReportFlood,
   activeDisasterCount,
 }) => {
   return (
@@ -89,19 +91,32 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Sources button */}
           <button
             onClick={onOpenSources}
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 shadow-sm transition-colors"
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700 shadow-sm transition-colors"
           >
             <Database className="w-3.5 h-3.5 text-sky-600" />
             <span>แหล่งข้อมูล</span>
           </button>
 
+          {/* Crowdsourced Report Flood Button */}
+          {onOpenReportFlood && (
+            <button
+              onClick={onOpenReportFlood}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white text-xs font-bold shadow-md shadow-rose-500/20 transition-all active:scale-95"
+              title="ปักหมุดแจ้งเหตุน้ำท่วมในพื้นที่ของคุณ"
+            >
+              <Megaphone className="w-3.5 h-3.5 animate-pulse" />
+              <span>แจ้งน้ำท่วม</span>
+            </button>
+          )}
+
           {/* Emergency Hotline Button */}
           <button
             onClick={onOpenHotlines}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white text-xs font-semibold shadow-md shadow-rose-500/20 transition-all active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white text-xs font-semibold shadow-md shadow-rose-500/20 transition-all active:scale-95"
           >
             <Phone className="w-3.5 h-3.5" />
-            <span>สายด่วน 1784</span>
+            <span className="hidden xs:inline">สายด่วน 1784</span>
+            <span className="xs:hidden">1784</span>
           </button>
         </div>
       </div>

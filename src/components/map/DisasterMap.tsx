@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import type { DisasterEvent } from '../../types/disaster';
 import { DISASTER_TYPES_CONFIG, SEVERITY_CONFIG } from '../../utils/formatters';
-import { RotateCcw, Map as MapIcon, Moon, Satellite, Navigation, Loader2, Plus, Minus } from 'lucide-react';
+import { RotateCcw, Map as MapIcon, Moon, Satellite, Navigation, Loader2, Plus, Minus, Megaphone } from 'lucide-react';
 import { THAILAND_RIVERS, MAJOR_DAMS } from '../../data/thailandRivers';
 import { rainViewerAdapter, getRadarTileUrl, type RadarFrame } from '../../services/api/adapters/rainViewerAdapter';
 import { MapOverlayControl, type MapOverlaySettings } from './MapOverlayControl';
@@ -34,6 +34,7 @@ interface DisasterMapProps {
   userLocation?: UserGPSLocation | null;
   searchPinLocation?: SearchPinLocation | null;
   onUserLocationFound?: (location: UserGPSLocation) => void;
+  onOpenReportFlood?: () => void;
   className?: string;
 }
 
@@ -50,6 +51,7 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
   userLocation = null,
   searchPinLocation = null,
   onUserLocationFound,
+  onOpenReportFlood,
   className = '',
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -481,6 +483,10 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
             ? `<span class="absolute -inset-1.5 rounded-full animate-ping opacity-60" style="background-color: ${sevConfig.hexColor};"></span>`
             : '';
 
+        const communityBadge = event.isCommunityReport
+          ? `<span class="absolute -top-1 -right-1 bg-gradient-to-r from-rose-500 to-amber-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-xs border border-white">📢</span>`
+          : '';
+
         const markerHtml = `
           <div class="relative flex items-center justify-center cursor-pointer transition-transform hover:scale-125 ${
             isSelected ? 'scale-125 z-50' : 'z-20'
@@ -488,8 +494,9 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
             ${pulseHtml}
             <div class="relative w-9 h-9 rounded-full flex items-center justify-center text-base shadow-md border-2 transition-all"
                  style="background-color: #ffffff; border-color: ${sevConfig.hexColor}; box-shadow: 0 4px 12px ${sevConfig.pulseColor};">
-              <span>${typeConfig.emoji}</span>
+              <span>${event.isCommunityReport ? '🌊' : typeConfig.emoji}</span>
             </div>
+            ${communityBadge}
             ${
               isSelected
                 ? `<div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45" style="background-color: ${sevConfig.hexColor};"></div>`
@@ -511,11 +518,18 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
           title: `${event.title} (${event.province})`,
         });
 
+        const sourceBadgeHtml = event.isCommunityReport
+          ? `<div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 text-[9px] font-bold mb-1 border border-orange-200"><span>📢 รายงานโดยประชาชน</span><span>(👍 ${event.upvotes || 1})</span></div>`
+          : event.sourceCode === 'HII'
+          ? `<div class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-sky-100 text-sky-900 text-[9px] font-bold mb-1 border border-sky-200"><span>📡 โทรมาตรสด ThaiWater</span></div>`
+          : '';
+
         // Tooltip on hover
         marker.bindTooltip(
           `<div class="p-1.5 text-xs w-[230px] sm:w-[250px] max-w-[85vw] whitespace-normal">
+             ${sourceBadgeHtml}
              <div class="font-bold text-slate-900 flex items-center gap-1.5 mb-1 pb-1 border-b border-slate-100">
-               <span class="text-base">${typeConfig.emoji}</span>
+               <span class="text-base">${event.isCommunityReport ? '🌊' : typeConfig.emoji}</span>
                <span class="font-bold text-slate-900">${event.province || ''} ${event.district ? `(${event.district})` : ''}</span>
              </div>
              <div class="text-[11px] text-slate-600 leading-snug mb-1.5">${event.title || ''}</div>
@@ -874,6 +888,18 @@ export const DisasterMap: React.FC<DisasterMapProps> = ({
 
       {/* Bottom Right Floating Control Column: GPS + Zoom Controls in unified layout (Zero overlap) */}
       <div className="absolute bottom-4 right-3 z-20 pointer-events-auto flex flex-col items-center gap-2">
+        {/* Floating Quick Report Flood Button */}
+        {onOpenReportFlood && (
+          <button
+            onClick={onOpenReportFlood}
+            aria-label="ปักหมุดแจ้งน้ำท่วม"
+            className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white shadow-lg flex items-center justify-center transition-all active:scale-90 ring-2 ring-white/80"
+            title="📢 ปักหมุดแจ้งเหตุน้ำท่วมในพื้นที่นี้"
+          >
+            <Megaphone className="w-4 h-4 sm:w-5 sm:h-5 animate-pulse" />
+          </button>
+        )}
+
         {/* GPS Locate Me Button */}
         <button
           onClick={handleLocateGPS}

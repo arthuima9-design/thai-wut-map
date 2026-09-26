@@ -43,11 +43,15 @@ export interface DisasterEvent {
   status: DisasterStatus;
   source: string;
   sourceUrl?: string;
-  sourceCode: 'GISTDA' | 'TMD' | 'DDPM' | 'NDWC' | 'USGS' | 'NASA_FIRMS' | 'RID' | 'SYSTEM';
+  sourceCode: 'GISTDA' | 'TMD' | 'DDPM' | 'NDWC' | 'USGS' | 'NASA_FIRMS' | 'RID' | 'SYSTEM' | 'HII' | 'COMMUNITY';
   reportedAt: string; // ISO 8601
   updatedAt: string;  // ISO 8601
   confidence: ConfidenceLevel;
   isDemo?: boolean;
+  isCommunityReport?: boolean;
+  upvotes?: number;
+  reporterName?: string;
+  reportSourceType?: 'self' | 'social_media' | 'rescue_team';
   affectedPeople?: number;
   affectedHouseholds?: number;
   depthCm?: number;        // for floods
